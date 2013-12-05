@@ -70,4 +70,8 @@ public class Search extends DbConnector {
 				"where  v1.mz = v2.mz and v1.scan_id <> " + scan_id + " group by v1.scan_id order by sum_value desc limit " + resultNumber;
 		return executeQuery(s_sql);
 	}
+	public List<List<String>> getBlind() throws Exception {
+		String s_sql = "select mz from ms.blind";
+		return executeQuery(s_sql);
+	}
 }

@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -54,10 +57,11 @@ public class MassSearch {
 	}
 	class CustomComparator implements Comparator<Mass> {
 	    public int compare(Mass o1, Mass o2) {
-	        return ((Double)o1.getMz()).compareTo((Double)o2.getMz());
+	        return ((Double)o1.getIntensity()).compareTo((Double)o2.getIntensity());
 	    }
 	}
 	private int massSeachingResult(List<Mass> massInfo, int alg, int number) {
+		Collections.reverse(massInfo);
 		//if (alg==null) alg =1;
 		if (number==0) number=1;
 		Search aSearch = new Search();
@@ -65,13 +69,22 @@ public class MassSearch {
 		double maxIntensity = getMaxIntensity(massInfo);
 		Collections.sort(massInfo, new CustomComparator());
 		Collections.reverse(massInfo);
+		
+		TreeMap<Double, Double> aTreeMap = new TreeMap<Double, Double>();
 		removeOldScanId(aSearch);
 		int iCount=0;
+		for (Mass aMass:massInfo){
+			aTreeMap.put(aMass.getIntensity(), aMass.getMz());
+			if (aTreeMap.size()>15) aTreeMap.remove(aTreeMap.firstKey());
+		}
+		for (Entry<Double, Double> entry: aTreeMap.entrySet()){
+			System.out.println(entry.getKey() + " : " + entry.getValue());
+		}
 		for (Mass aMass:massInfo){
 
 			if (iCount++>=15) break;
 			try {
-				double a = Math.round(aMass.getMz()/1.5)*100*1.5;
+				int a = (int)(Math.round(aMass.getMz()/1.5)*100*1.5);
 				aSearch.setMSPreference(SCAN_ID, ((int)(Math.round(aMass.getMz()/1.5)*100*1.5)), aMass.getIntensity()/maxIntensity);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

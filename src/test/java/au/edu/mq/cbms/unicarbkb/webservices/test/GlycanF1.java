@@ -354,6 +354,21 @@ public class GlycanF1 {
 		return aLongArray;
 	}
 
+	public void testCast(){
+		try {
+			List<List<String>> aCastList = aSearch.getBlind();
+			for (List aCast : aCastList) {
+				Double temp = Double.parseDouble((String) aCast.get(0));
+				int a = (int)(Math.round(temp/1.5)*100*1.5);
+				System.out.println(temp + " : "+ a);
+				
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	public static void main(String[] args) throws Exception {
 		Properties prop = new Properties();
@@ -383,6 +398,7 @@ public class GlycanF1 {
 
 		Prepare aPrepare = new Prepare();
 		GlycanF1 aAccuracyF1 = new GlycanF1();
+		aAccuracyF1.testCast();
 	//	double screenSize = 5;
 
 		if (testNoise){
