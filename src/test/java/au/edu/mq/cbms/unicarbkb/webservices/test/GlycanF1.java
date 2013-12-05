@@ -35,7 +35,7 @@ public class GlycanF1 {
 	 * |selected| = true positives + false positives <br>
 	 * the count of selected (or retrieved) items
 	 */
-	private long selected;
+
 	private final static Logger LOGGER = Logger.getLogger(GlycanF1.class .getName());
 
 //	public static final Log log = LogFactory.getLog(MassSearchingF1.class
