@@ -13,5 +13,8 @@ public class testMzxml {
 		for (Scan aspectrum:aMzXMLScanIterator){
 			System.out.println (aspectrum.getBasePeakMz() + "," + aspectrum.getBasePeakIntensity());
 		}
+		
+		
+		
 	}
 }

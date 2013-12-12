@@ -63,7 +63,6 @@ public class GlycanF1 {
 			"intensity_value", "timestamp");
 
 	void init() {
-		selected = 0;
 		target = 0;
 		truePositive = 0;
 	}

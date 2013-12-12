@@ -1,5 +1,11 @@
 package au.edu.mq.cbms.unicarbkb.webservices.ms;
 
+/**
+ * MSMatching
+ * <P>
+ * @author JingYu ZHANG (jingyuzhang2008@gmail.com)
+ * @version 0.99
+ */
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,30 +26,44 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.JDBCDataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import au.edu.mq.cbms.unicarbkb.webservices.util.MyLogger;
 import au.edu.mq.cbms.unicarbkb.webservices.Algorithm.DotProduct;
 import au.edu.mq.cbms.unicarbkb.webservices.db.DbConnector;
 import au.edu.mq.cbms.unicarbkb.webservices.db.Search;
 
 public class MSMatching {
+	private final static Logger LOGGER = Logger.getLogger(MSMatching.class
+			.getName());
 	static JDBCDataModel dataModel = new PostgreSQLJDBCDataModel(
 			DbConnector.getUnicarbDS(), "ms.ms_preferences", "scan_id", "mz",
 			"intensity_value", "timestamp");
-	private  double distance = 0.5;
-	 Search aSearch = new Search();
-	 int topN = 3;
-	 Map<Long, Long> aHashMap = new HashMap<Long, Long>();
-	 List<Long> similarityArray = new ArrayList<Long>();
+	private double distance = 0.5;
+	double maxDis = 0;
+	long maxScan_id = 0;
+	Search aSearch = new Search();
+	int topN = 3;
+	Map<Long, Long> aHashMap = new HashMap<Long, Long>();
+	List<Long> similarityArray = new ArrayList<Long>();
 
-	public  long matchMS(int scan_id, int algorithm, int numberOfResult) {
+	public long getMaxScan_id() {
+		return maxScan_id;
+	}
+
+	public double getMaxDis() {
+		return maxDis;
+	}
+
+	public long matchMS(int scan_id, int algorithm, int numberOfResult) {
 		if (algorithm > 9 || algorithm < 0)
 			algorithm = 0;
 		try {
 			DataModel aReloadFromJDBCDataModel = new ReloadFromJDBCDataModel(
 					dataModel);
 			UserSimilarity similarity = null;
-//			List<Long> similarityArray = new ArrayList<Long>();
-//			algorithm = 0;
+			// List<Long> similarityArray = new ArrayList<Long>();
+			// algorithm = 0;
 			// dataModel= new
 			// PostgreSQLJDBCDataModel(DbConnector.getUnicarbDS(),
 			// "ms.ms_preferences", "scan_id", "mz", "intensity_value",
@@ -85,7 +105,8 @@ public class MSMatching {
 				}
 				return 0;
 			} else { // for dot product + loglilikelyhood function
-				return returnDotProductwithLogLikelihood(scan_id, numberOfResult,aReloadFromJDBCDataModel);
+				return returnDotProductwithLogLikelihood(scan_id,
+						numberOfResult, aReloadFromJDBCDataModel);
 
 			}
 			if (algorithm != 9 || algorithm != 0) {
@@ -104,10 +125,10 @@ public class MSMatching {
 		return 0;
 	}
 
-	private  void putDotScanID(int scan_id, Map<Long, Long> aHashMap,
+	private void putDotScanID(int scan_id, Map<Long, Long> aHashMap,
 			List<List<String>> dotProctList) throws Exception {
-		int i = 0;		
-		
+		int i = 0;
+
 		for (List<String> aStringList : dotProctList) {
 			// scan_id
 			i++;
@@ -118,31 +139,35 @@ public class MSMatching {
 								.getGlycanSequenceID(
 										Long.parseLong(aStringList.get(0)))
 								.get(0).get(0));
-				System.out.println("aNeighbor:" + isdistance + "  : Scan_id: "
-						+ scan_id + " :Glan_id: " + tempSimilartiy + ":Dis:"
-						+ aStringList.get(1));
+				// System.out.println("aNeighbor:" + isdistance +
+				// "  : Scan_id: "
+				// + scan_id + " :Glan_id: " + tempSimilartiy + ":Dis:"
+				// + aStringList.get(1));
 				if (aHashMap.containsKey(tempSimilartiy)) {
-					if (Math.round(isdistance*100)==100) // two items are equal
+					if (Math.round(isdistance * 100) == 100) // two items are
+																// equal
 						aHashMap.put(tempSimilartiy,
-								aHashMap.get(tempSimilartiy) + topN*topN);
+								aHashMap.get(tempSimilartiy) + topN * topN);
 					else
-					aHashMap.put(tempSimilartiy,
-							aHashMap.get(tempSimilartiy) + (long) (topN+1-i)*topN);
+						aHashMap.put(tempSimilartiy,
+								aHashMap.get(tempSimilartiy)
+										+ (long) (topN + 1 - i) * topN);
 				} else {
-					if (Math.round(isdistance*100)==100)
-						aHashMap.put(tempSimilartiy,(long)topN*topN);
+					if (Math.round(isdistance * 100) == 100)
+						aHashMap.put(tempSimilartiy, (long) topN * topN);
 					else
-						aHashMap.put(tempSimilartiy, (long) (topN+1-i)*topN);
+						aHashMap.put(tempSimilartiy, (long) (topN + 1 - i)
+								* topN);
 				}
 				// aHashMap.put(tempSimilartiy, (long) 1);
 			}
-//			System.out.println("");
+			// System.out.println("");
 			// sum value
 
 		}
 	}
 
-	private  int getMaxGlycan(Map<Long, Long> aHashMap) {
+	private int getMaxGlycan(Map<Long, Long> aHashMap) {
 		long tempGlycan = 0;
 		long maxKey = 0;
 		for (Long key : aHashMap.keySet()) {
@@ -160,46 +185,73 @@ public class MSMatching {
 		System.out.println("Glycan: " + maxKey);
 		return 0;
 	}
-	private  void putScanID(int scan_id, UserSimilarity aSimilarity,
+
+	private String putScanID(int scan_id, UserSimilarity aSimilarity,
 			long[] aNeighbors, Map<Long, Long> aHashMap) throws TasteException {
 		if (aNeighbors.length == 0)
-			return;
-		int i =0;
-		System.out.println("___");
+			return "";
+		int i = 0;
+		// System.out.println("___");
+
+		double currentDis = 0;
 		for (long aNeighbor : aNeighbors) {
 			i++;
-			if (aSimilarity.userSimilarity(scan_id, aNeighbor) > distance) {
+			if ((currentDis = aSimilarity.userSimilarity(scan_id, aNeighbor)) > distance) {
+				if (currentDis > maxDis) {
+					maxDis = currentDis;
+					maxScan_id = aNeighbor;
+				}
+				System.out.println("maxDis:" + maxDis + ":dis:"
+						+ aSimilarity.userSimilarity(scan_id, aNeighbor));
 				updateScore(scan_id, aSimilarity, aHashMap, i, aNeighbor);
 			}
 		}
+		return maxScan_id + "," + maxDis;
 	}
 
-	private  void updateScore(int scan_id, UserSimilarity aSimilarity,
+	private void updateScore(int scan_id, UserSimilarity aSimilarity,
 			Map<Long, Long> aHashMap, int i, long aNeighbor) {
 		try {
-			
+
 			long tempSimilartiy = Long.parseLong(aSearch
 					.getGlycanSequenceID(aNeighbor).get(0).get(0));
-			System.out.println("aNeighbor:" + aNeighbor + "  : Scan_id: " + scan_id + " :Glan_id: " + tempSimilartiy  + ":Dis:" + aSimilarity.userSimilarity(scan_id, aNeighbor));
+			System.out.println("aNeighbor:" + aNeighbor + "  : Scan_id: "
+					+ scan_id + " :Glan_id: " + tempSimilartiy + ":Dis:"
+					+ aSimilarity.userSimilarity(scan_id, aNeighbor));
+			try {
+				MyLogger.setup();
+				LOGGER.setLevel(Level.INFO);
+				LOGGER.info("aNeighbor:" + aNeighbor + "  : Scan_id: "
+					+ scan_id + " :Glan_id: " + tempSimilartiy + ":Dis:"
+					+ aSimilarity.userSimilarity(scan_id, aNeighbor));
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new RuntimeException(
+						"Problems with creating the log files");
+			}
 			if (aHashMap.containsKey(tempSimilartiy)) {
-				if (Math.round(aSimilarity.userSimilarity(scan_id, aNeighbor)*100)==100) // two items are equal
-					aHashMap.put(tempSimilartiy,
-							aHashMap.get(tempSimilartiy) + topN*topN);
+				if (Math.round(aSimilarity.userSimilarity(scan_id, aNeighbor) * 100) == 100) // two
+																								// items
+																								// are
+																								// equal
+					aHashMap.put(tempSimilartiy, aHashMap.get(tempSimilartiy)
+							+ topN * topN);
 				else
-				aHashMap.put(tempSimilartiy,
-						aHashMap.get(tempSimilartiy) + (long) (topN+1-i)*topN);
+					aHashMap.put(tempSimilartiy, aHashMap.get(tempSimilartiy)
+							+ (long) (topN + 1 - i) * topN);
 			} else {
-				if (Math.round(aSimilarity.userSimilarity(scan_id, aNeighbor)*100)==100)
-					aHashMap.put(tempSimilartiy,(long)topN*topN);
+				if (Math.round(aSimilarity.userSimilarity(scan_id, aNeighbor) * 100) == 100)
+					aHashMap.put(tempSimilartiy, (long) topN * topN);
 				else
-					aHashMap.put(tempSimilartiy, (long) (topN+1-i)*topN);
+					aHashMap.put(tempSimilartiy, (long) (topN + 1 - i) * topN);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	private  int returnDotProductwithLogLikelihood(int scan_id,
-			int numberOfResult,DataModel aReloadFromJDBCDataModel) {
+
+	private int returnDotProductwithLogLikelihood(int scan_id,
+			int numberOfResult, DataModel aReloadFromJDBCDataModel) {
 
 		try {
 			UserSimilarity loglikehoodSimilarity = new LogLikelihoodSimilarity(
@@ -207,24 +259,24 @@ public class MSMatching {
 			UserNeighborhood loglikehoodNeighborhood = new NearestNUserNeighborhood(
 					numberOfResult, loglikehoodSimilarity,
 					aReloadFromJDBCDataModel);
-			List<List<String>> dotProctList = (new DotProduct())
+			List<List<String>> dotProductList = (new DotProduct())
 					.doDotProductAll(scan_id, numberOfResult);
 			topN = numberOfResult;
-			putDotScanID(scan_id, aHashMap, dotProctList);
-			putScanID(scan_id, loglikehoodSimilarity,
+			putDotScanID(scan_id, aHashMap, dotProductList);
+			String scanIDwithDis = putScanID(scan_id, loglikehoodSimilarity,
 					loglikehoodNeighborhood.getUserNeighborhood(scan_id),
 					aHashMap);
-			for (List<String> aStringList : dotProctList) {
+			for (List<String> aStringList : dotProductList) {
 				// scan_id
 				long isdistance;
 				if ((isdistance = Long.parseLong(aStringList.get(0))) > distance) {
 					long tempSimilartiy = Long.parseLong(aSearch
 							.getGlycanSequenceID(isdistance).get(0).get(0));
-					System.out.println("aNeighbor:" + isdistance
-							+ "  : Scan_id: " + scan_id + " :Glan_id: "
-							+ tempSimilartiy + ":Dis:" + aStringList.get(1));
+					// System.out.println("aNeighbor:" + isdistance
+					// + "  : Scan_id: " + scan_id + " :Glan_id: "
+					// + tempSimilartiy + ":Dis:" + aStringList.get(1));
 				}
-				System.out.println("");
+				// System.out.println("");
 				// sum value
 			}
 		} catch (NumberFormatException e) {
@@ -235,7 +287,7 @@ public class MSMatching {
 			e.printStackTrace();
 		}
 		return (int) getMaxGlycan(aHashMap);
-		
+
 	}
 
 	public static void main(String[] args) throws Exception {

@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,6 +16,10 @@ import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import uk.ac.ebi.pride.tools.mzxml_parser.MzXMLFile;
+import uk.ac.ebi.pride.tools.mzxml_parser.MzXMLFile.MzXMLScanIterator;
+import uk.ac.ebi.pride.tools.mzxml_parser.mzxml.model.Scan;
 import au.edu.mq.cbms.unicarbkb.webservices.model.ws.*;
 
 public class MassSearchingTest {
@@ -61,10 +66,10 @@ public class MassSearchingTest {
 
     	MassSearchingTest aMassSearchingTest = new MassSearchingTest();
 //    	aMassSearchingTest.readCSV();
-    	aMassSearchingTest.runRequest("http://115.146.93.194/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE,aMassSearchingTest.readCSV());
+//    	aMassSearchingTest.runRequest("http://115.146.93.194/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE,aMassSearchingTest.readCSV());
 //    	aMassSearchingTest.runRequest("http://localhost:10000/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE);
     	//    	aMassSearchingTest.runRequest2("http://localhost:10000/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE);
-//    	aMassSearchingTest.runRequest3("http://localhost:10000/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE);
+    	aMassSearchingTest.runRequest3("http://localhost:10000/cross-database-search/rest/peaklist/xml", MediaType.APPLICATION_XML_TYPE);
     }
     /**
      * The purpose of this method is to run the external REST request.
@@ -249,27 +254,21 @@ public class MassSearchingTest {
               List<Mass> aList = new ArrayList<Mass>();
              // aList.add(aStructure);
              // aStructure = new Structure();
+      		File mzxmlFile = new File("D:\\MassSpectrometry\\mzxml\\Fetuin.mzXML");
+    		MzXMLFile inputParser = new MzXMLFile(mzxmlFile);
+    		MzXMLScanIterator aMzXMLScanIterator = inputParser.geMS1ScanIterator();
+    		
+    		for (Scan aspectrum:aMzXMLScanIterator){
+    			System.out.println (aspectrum.getBasePeakMz() + "," + aspectrum.getBasePeakIntensity());
+
+              
               aMsSearchRequest.setAlgorithm(0);
               aStructure.setMz(1461.5);
-              aStructure.setIntensity(1546);
+              aStructure.setIntensity(aspectrum.getBasePeakIntensity());
               aList.add(aStructure);
               
-              aStructure = new Mass();
-              aStructure.setMz(637.7);
-              aStructure.setIntensity(2055);
-              aList.add(aStructure);
-              
-              aStructure = new Mass();
-              aStructure.setMz(424.1);
-              aStructure.setIntensity(2390);
-              aList.add(aStructure);
-              
-              aStructure = new Mass();
-              aStructure.setMz(637.2);
-              aStructure.setIntensity(3459);
-              aList.add(aStructure);            
-              
-             
+
+    		}
               aMsSearchRequest.setMasses(aList);
               aMsSearchRequest.setNumberofresult(3);
 //              aMsSearchRequest.setMonoisotopic(true);
